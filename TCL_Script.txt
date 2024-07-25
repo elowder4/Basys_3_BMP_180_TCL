@@ -1,0 +1,142 @@
+proc setup {dir} {
+#Based on https://grittyengineer.com/vivado-project-mode-tcl-script/
+
+#Create output directory and clear contents
+set outputdir $dir
+file mkdir $outputdir
+set files [glob -nocomplain "$outputdir/*"]
+if {[llength $files] != 0} {
+    puts "deleting contents of $outputdir"
+    file delete -force {*}[glob -directory $outputdir *]; # clear folder contents
+} else {
+    puts "$outputdir is empty"
+}
+
+#Create project with Basys 3
+create_project -part xc7a35tcpg236-1 Display_Temp $outputdir
+set_property board_part digilentinc.com:basys3:part0:1.2 [current_project]
+file copy -force Display_Temp.srcs Display_Temp
+
+#Add source files to the Vivado project
+add_files -fileset sim_1 [glob ./Display_Temp/Display_Temp.srcs/sim_1/new/*.v]
+add_files -fileset constrs_1 ./Display_Temp/Display_Temp.srcs/constrs_1/new/phys_const.xdc
+add_files [glob ./Display_Temp/Display_Temp.srcs/sources_1/new/*.v]
+
+#Generate IPs
+#Adder 1
+create_ip -name c_addsub -vendor xilinx.com -library ip -version 12.0 -module_name c_addsub_0
+set_property -dict [list \
+  CONFIG.A_Type {Unsigned} \
+  CONFIG.A_Width {9} \
+  CONFIG.B_Value {00000000} \
+  CONFIG.B_Width {8} \
+  CONFIG.Latency {3} \
+  CONFIG.Out_Width {11} \
+] [get_ips c_addsub_0]
+generate_target {instantiation_template} [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_0/c_addsub_0.xci]
+generate_target all [get_files  Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_0/c_addsub_0.xci]
+catch { config_ip_cache -export [get_ips -all c_addsub_0] }
+export_ip_user_files -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_0/c_addsub_0.xci] -no_script -sync -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_0/c_addsub_0.xci]
+launch_runs c_addsub_0_synth_1 -jobs 4
+wait_on_run c_addsub_0_synth_1
+export_simulation -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_0/c_addsub_0.xci] -directory Display_Temp/Display_Temp.ip_user_files/sim_scripts -ip_user_files_dir Display_Temp/Display_Temp.ip_user_files -ipstatic_source_dir Display_Temp/Display_Temp.ip_user_files/ipstatic -lib_map_path [list {modelsim=Display_Temp/Display_Temp.cache/compile_simlib/modelsim} {questa=Display_Temp/Display_Temp.cache/compile_simlib/questa} {riviera=Display_Temp/Display_Temp.cache/compile_simlib/riviera} {activehdl=Display_Temp/Display_Temp.cache/compile_simlib/activehdl}] -use_ip_compiled_libs -force -quiet
+update_compile_order -fileset sources_1
+
+#Adder 2
+create_ip -name c_addsub -vendor xilinx.com -library ip -version 12.0 -module_name c_addsub_1
+set_property -dict [list \
+  CONFIG.A_Type {Unsigned} \
+  CONFIG.A_Width {9} \
+  CONFIG.B_Value {00000000} \
+  CONFIG.B_Width {23} \
+  CONFIG.Latency {3} \
+  CONFIG.Out_Width {24} \
+] [get_ips c_addsub_1]
+generate_target {instantiation_template} [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_1/c_addsub_1.xci]
+generate_target all [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_1/c_addsub_1.xci]
+catch { config_ip_cache -export [get_ips -all c_addsub_1] }
+export_ip_user_files -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_1/c_addsub_1.xci] -no_script -sync -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_1/c_addsub_1.xci]
+launch_runs c_addsub_1_synth_1 -jobs 4
+wait_on_run c_addsub_1_synth_1
+export_simulation -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/c_addsub_1/c_addsub_1.xci] -directory Display_Temp/Display_Temp.ip_user_files/sim_scripts -ip_user_files_dir Display_Temp/Display_Temp.ip_user_files -ipstatic_source_dir Display_Temp/Display_Temp.ip_user_files/ipstatic -lib_map_path [list {modelsim=Display_Temp/Display_Temp.cache/compile_simlib/modelsim} {questa=Display_Temp/Display_Temp.cache/compile_simlib/questa} {riviera=Display_Temp/Display_Temp.cache/compile_simlib/riviera} {activehdl=Display_Temp/Display_Temp.cache/compile_simlib/activehdl}] -use_ip_compiled_libs -force -quiet
+update_compile_order -fileset sources_1
+
+#Divider 1
+create_ip -name div_gen -vendor xilinx.com -library ip -version 5.1 -module_name div_gen_0
+set_property -dict [list \
+  CONFIG.dividend_and_quotient_width {19} \
+  CONFIG.divisor_width {11} \
+  CONFIG.fractional_width {16} \
+  CONFIG.latency {39} \
+  CONFIG.remainder_type {Fractional} \
+] [get_ips div_gen_0]
+generate_target {instantiation_template} [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_0/div_gen_0.xci]
+generate_target all [get_files  Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_0/div_gen_0.xci]
+catch { config_ip_cache -export [get_ips -all div_gen_0] }
+export_ip_user_files -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_0/div_gen_0.xci] -no_script -sync -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_0/div_gen_0.xci]
+launch_runs div_gen_0_synth_1 -jobs 4
+wait_on_run div_gen_0_synth_1
+export_simulation -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_0/div_gen_0.xci] -directory Display_Temp/Display_Temp.ip_user_files/sim_scripts -ip_user_files_dir Display_Temp/Display_Temp.ip_user_files -ipstatic_source_dir Display_Temp/Display_Temp.ip_user_files/ipstatic -lib_map_path [list {modelsim=Display_Temp/Display_Temp.cache/compile_simlib/modelsim} {questa=Display_Temp/Display_Temp.cache/compile_simlib/questa} {riviera=Display_Temp/Display_Temp.cache/compile_simlib/riviera} {activehdl=Display_Temp/Display_Temp.cache/compile_simlib/activehdl}] -use_ip_compiled_libs -force -quiet
+
+#Divider 2
+create_ip -name div_gen -vendor xilinx.com -library ip -version 5.1 -module_name div_gen_1
+set_property -dict [list \
+  CONFIG.dividend_and_quotient_width {24} \
+  CONFIG.divisor_width {9} \
+  CONFIG.fractional_width {16} \
+  CONFIG.latency {44} \
+  CONFIG.remainder_type {Fractional} \
+] [get_ips div_gen_1]
+generate_target {instantiation_template} [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_1/div_gen_1.xci]
+generate_target all [get_files  Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_1/div_gen_1.xci]
+catch { config_ip_cache -export [get_ips -all div_gen_1] }
+export_ip_user_files -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_1/div_gen_1.xci] -no_script -sync -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_1/div_gen_1.xci]
+launch_runs div_gen_1_synth_1 -jobs 4
+wait_on_run div_gen_1_synth_1
+export_simulation -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/div_gen_1/div_gen_1.xci] -directory Display_Temp/Display_Temp.ip_user_files/sim_scripts -ip_user_files_dir Display_Temp/Display_Temp.ip_user_files -ipstatic_source_dir Display_Temp/Display_Temp.ip_user_files/ipstatic -lib_map_path [list {modelsim=Display_Temp/Display_Temp.cache/compile_simlib/modelsim} {questa=Display_Temp/Display_Temp.cache/compile_simlib/questa} {riviera=Display_Temp/Display_Temp.cache/compile_simlib/riviera} {activehdl=Display_Temp/Display_Temp.cache/compile_simlib/activehdl}] -use_ip_compiled_libs -force -quiet
+
+#Clocking Wizard
+create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name clk_wiz_0
+set_property -dict [list \
+  CONFIG.CLKOUT1_JITTER {278.859} \
+  CONFIG.CLKOUT1_PHASE_ERROR {132.063} \
+  CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {4.68750} \
+  CONFIG.CLK_IN1_BOARD_INTERFACE {sys_clock} \
+  CONFIG.MMCM_CLKFBOUT_MULT_F {6.000} \
+  CONFIG.MMCM_CLKIN1_PERIOD {10.0} \
+  CONFIG.MMCM_CLKIN2_PERIOD {10.0} \
+  CONFIG.MMCM_CLKOUT0_DIVIDE_F {128.000} \
+  CONFIG.USE_LOCKED {false} \
+] [get_ips clk_wiz_0]
+generate_target {instantiation_template} [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
+generate_target all [get_files  Display_Temp/Display_Temp.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
+catch { config_ip_cache -export [get_ips -all clk_wiz_0] }
+export_ip_user_files -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci] -no_script -sync -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] Display_Temp/Display_Temp.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci]
+launch_runs clk_wiz_0_synth_1 -jobs 4
+wait_on_run clk_wiz_0_synth_1
+export_simulation -of_objects [get_files Display_Temp/Display_Temp.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci] -directory Display_Temp/Display_Temp.ip_user_files/sim_scripts -ip_user_files_dir Display_Temp/Display_Temp.ip_user_files -ipstatic_source_dir Display_Temp/Display_Temp.ip_user_files/ipstatic -lib_map_path [list {modelsim=Display_Temp/Display_Temp.cache/compile_simlib/modelsim} {questa=Display_Temp/Display_Temp.cache/compile_simlib/questa} {riviera=Display_Temp/Display_Temp.cache/compile_simlib/riviera} {activehdl=Display_Temp/Display_Temp.cache/compile_simlib/activehdl}] -use_ip_compiled_libs -force -quiet
+
+
+#Set top level module and update compile order
+set_property top top [current_fileset]
+update_compile_order -fileset sources_1
+update_compile_order -fileset sim_1
+
+#Launch synthesis
+launch_runs synth_1
+wait_on_run synth_1
+
+#Run implementation and generate bitstream
+set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED true [get_runs impl_1]
+launch_runs impl_1 -to_step write_bitstream
+wait_on_run impl_1
+puts "Implementation done!"
+}
+
+#Run function
+setup ./Display_Temp
